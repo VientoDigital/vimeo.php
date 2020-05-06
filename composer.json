@@ -1,8 +1,11 @@
 {
-    "name": "vimeo/vimeo-api",
+    "name": "vientodigital/vimeo-api",
     "description": "Official PHP library for the Vimeo API.",
     "homepage": "https://github.com/vimeo/vimeo.php",
-    "keywords": ["vimeo", "video"],
+    "keywords": [
+        "vimeo",
+        "video"
+    ],
     "license": "Apache-2.0",
     "authors": [
         {
@@ -14,7 +17,7 @@
     "require": {
         "php": ">=7.1.0",
         "ext-curl": "*",
-        "ext-json":"*",
+        "ext-json": "*",
         "ankitpokhrel/tus-php": "^v1.0.0"
     },
     "autoload": {

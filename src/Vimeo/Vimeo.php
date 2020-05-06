@@ -1,11 +1,10 @@
 <?php
+
 namespace Vimeo;
 
-use Carbon\Carbon;
 use Vimeo\Exceptions\VimeoException;
 use Vimeo\Exceptions\VimeoRequestException;
 use Vimeo\Exceptions\VimeoUploadException;
-use Vimeo\Upload\TusClient;
 
 /**
  *   Copyright 2013 Vimeo
@@ -39,10 +38,10 @@ class Vimeo
     const CERTIFICATE_PATH = '/certificates/vimeo-api.pem';
 
     /** @var array */
-    protected $_curl_opts = array();
+    protected $_curl_opts = [];
 
     /** @var array */
-    protected $CURL_DEFAULTS = array();
+    protected $CURL_DEFAULTS = [];
 
     /** @var null|string */
     private $_client_id = null;
@@ -65,15 +64,15 @@ class Vimeo
         $this->_client_id = $client_id;
         $this->_client_secret = $client_secret;
         $this->_access_token = $access_token;
-        $this->CURL_DEFAULTS = array(
+        $this->CURL_DEFAULTS = [
             CURLOPT_HEADER => 1,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT => 30,
             CURLOPT_SSL_VERIFYPEER => true,
             //Certificate must indicate that the server is the server to which you meant to connect.
             CURLOPT_SSL_VERIFYHOST => 2,
-            CURLOPT_CAINFO => realpath(__DIR__ .'/../..') . self::CERTIFICATE_PATH
-        );
+            CURLOPT_CAINFO => realpath(__DIR__ . '/../..') . self::CERTIFICATE_PATH
+        ];
     }
 
     /**
@@ -87,12 +86,12 @@ class Vimeo
      * @return array This array contains three keys, 'status' is the status code, 'body' is an object representation of the json response body, and headers are an associated array of response headers
      * @throws VimeoRequestException
      */
-    public function request($url, $params = array(), $method = 'GET', $json_body = true, array $headers = array()): array
+    public function request($url, $params = [], $method = 'GET', $json_body = true, array $headers = []): array
     {
-        $headers = array_merge(array(
+        $headers = array_merge([
             'Accept' => self::VERSION_STRING,
             'User-Agent' => self::USER_AGENT,
-        ), $headers);
+        ], $headers);
 
         $method = strtoupper($method);
 
@@ -107,7 +106,7 @@ class Vimeo
         }
 
         //  Set the methods, determine the URL that we should actually request and prep the body.
-        $curl_opts = array();
+        $curl_opts = [];
         switch ($method) {
             case 'GET':
             case 'HEAD':
@@ -132,11 +131,11 @@ class Vimeo
                 }
 
                 $curl_url = self::ROOT_ENDPOINT . $url;
-                $curl_opts = array(
+                $curl_opts = [
                     CURLOPT_POST => true,
                     CURLOPT_CUSTOMREQUEST => $method,
                     CURLOPT_POSTFIELDS => $body
-                );
+                ];
                 break;
 
             default:
@@ -190,7 +189,7 @@ class Vimeo
      *
      * @param array $curl_opts An associative array of cURL options.
      */
-    public function setCURLOptions(array $curl_opts = array()): void
+    public function setCURLOptions(array $curl_opts = []): void
     {
         $this->_curl_opts = $curl_opts;
     }
@@ -222,7 +221,7 @@ class Vimeo
      */
     public static function parse_headers(string $headers): array
     {
-        $final_headers = array();
+        $final_headers = [];
         $list = explode("\n", trim($headers));
 
         $http = array_shift($list);
@@ -245,11 +244,11 @@ class Vimeo
      */
     public function accessToken(string $code, string $redirect_uri): array
     {
-        return $this->request(self::ACCESS_TOKEN_ENDPOINT, array(
+        return $this->request(self::ACCESS_TOKEN_ENDPOINT, [
             'grant_type' => 'authorization_code',
             'code' => $code,
             'redirect_uri' => $redirect_uri
-        ), "POST", false);
+        ], 'POST', false);
     }
 
     /**
@@ -264,10 +263,10 @@ class Vimeo
             $scope = implode(' ', $scope);
         }
 
-        $token_response = $this->request(self::CLIENT_CREDENTIALS_TOKEN_ENDPOINT, array(
+        $token_response = $this->request(self::CLIENT_CREDENTIALS_TOKEN_ENDPOINT, [
             'grant_type' => 'client_credentials',
             'scope' => $scope
-        ), "POST", false);
+        ], 'POST', false);
 
         return $token_response;
     }
@@ -282,11 +281,11 @@ class Vimeo
      */
     public function buildAuthorizationEndpoint($redirect_uri, $scope = 'public', $state = null)
     {
-        $query = array(
-            "response_type" => 'code',
-            "client_id" => $this->_client_id,
-            "redirect_uri" => $redirect_uri
-        );
+        $query = [
+            'response_type' => 'code',
+            'client_id' => $this->_client_id,
+            'redirect_uri' => $redirect_uri
+        ];
 
         $query['scope'] = $scope;
         if (empty($scope)) {
@@ -315,7 +314,7 @@ class Vimeo
      * @throws VimeoRequestException
      * @throws VimeoUploadException
      */
-    public function upload($file_path, array $params = array())
+    public function upload($file_path, array $params = [])
     {
         // Validate that our file is real.
         if (!is_file($file_path)) {
@@ -350,7 +349,7 @@ class Vimeo
      * @throws VimeoRequestException
      * @throws VimeoUploadException
      */
-    public function replace($video_uri, $file_path, array $params = array())
+    public function replace($video_uri, $file_path, array $params = [])
     {
         //  Validate that our file is real.
         if (!is_file($file_path)) {
@@ -397,7 +396,7 @@ class Vimeo
             throw new VimeoUploadException('Unable to locate file to upload.');
         }
 
-        $pictures_response = $this->request($pictures_uri, array(), 'POST');
+        $pictures_response = $this->request($pictures_uri, [], 'POST');
         if ($pictures_response['status'] !== 201) {
             throw new VimeoUploadException('Unable to request an upload url from vimeo');
         }
@@ -406,12 +405,12 @@ class Vimeo
 
         $image_resource = fopen($file_path, 'r');
 
-        $curl_opts = array(
+        $curl_opts = [
             CURLOPT_TIMEOUT => 240,
             CURLOPT_UPLOAD => true,
             CURLOPT_CUSTOMREQUEST => 'PUT',
             CURLOPT_READDATA => $image_resource
-        );
+        ];
 
         $curl = curl_init($upload_url);
 
@@ -433,7 +432,7 @@ class Vimeo
 
         // Activate the uploaded image
         if ($activate) {
-            $completion = $this->request($pictures_response['body']['uri'], array('active' => true), 'PATCH');
+            $completion = $this->request($pictures_response['body']['uri'], ['active' => true], 'PATCH');
         }
 
         return $pictures_response['body']['uri'];
@@ -459,14 +458,14 @@ class Vimeo
         }
 
         // To simplify the script we provide the filename as the text track name, but you can provide any value you want.
-        $name = array_slice(explode("/", $file_path), -1);
+        $name = array_slice(explode('/', $file_path), -1);
         $name = $name[0];
 
-        $texttrack_response = $this->request($texttracks_uri, array(
+        $texttrack_response = $this->request($texttracks_uri, [
             'type' => $track_type,
             'language' => $language,
             'name' => $name
-        ), 'POST');
+        ], 'POST');
 
         if ($texttrack_response['status'] !== 201) {
             throw new VimeoUploadException('Unable to request an upload url from vimeo');
@@ -476,12 +475,12 @@ class Vimeo
 
         $texttrack_resource = fopen($file_path, 'r');
 
-        $curl_opts = array(
+        $curl_opts = [
             CURLOPT_TIMEOUT => 240,
             CURLOPT_UPLOAD => true,
             CURLOPT_CUSTOMREQUEST => 'PUT',
             CURLOPT_READDATA => $texttrack_resource
-        );
+        ];
 
         $curl = curl_init($upload_url);
 
@@ -512,7 +511,7 @@ class Vimeo
      * @return array
      * @throws VimeoRequestException
      */
-    private function _request(string $url, $curl_opts = array()): array
+    private function _request(string $url, $curl_opts = []): array
     {
         // Merge the options (custom options take precedence).
         $curl_opts = $this->_curl_opts + $curl_opts + $this->CURL_DEFAULTS;
@@ -525,11 +524,11 @@ class Vimeo
 
         if (isset($curl_info['http_code']) && $curl_info['http_code'] === 0) {
             $curl_error = curl_error($curl);
-            $curl_error = !empty($curl_error) ? ' [' . $curl_error .']' : '';
+            $curl_error = !empty($curl_error) ? ' [' . $curl_error . ']' : '';
             throw new VimeoRequestException('Unable to complete request.' . $curl_error);
         } elseif (!$response || !is_string($response)) {
             $curl_error = curl_error($curl);
-            $curl_error = !empty($curl_error) ? ' [' . $curl_error .']' : '';
+            $curl_error = !empty($curl_error) ? ' [' . $curl_error . ']' : '';
             throw new VimeoRequestException('Unable to complete request.' . $curl_error);
         }
 
@@ -541,11 +540,11 @@ class Vimeo
         $body = substr($response, $header_size);
 
         // Return it raw.
-        return array(
+        return [
             'body' => $body,
             'status' => $curl_info['http_code'],
             'headers' => self::parse_headers($headers)
-        );
+        ];
     }
 
     /**
@@ -574,46 +573,82 @@ class Vimeo
      * @return string
      * @throws VimeoUploadException
      */
-    private function perform_upload_tus(string $file_path, $file_size, array $attempt): string
+    private function perform_upload_tus($file_path, $file_size, $attempt)
     {
-        $default_chunk_size = (100 * 1024 * 1024); // 100 MB
-
         $url = $attempt['body']['upload']['upload_link'];
-        $url_path = parse_url($url)['path'];
 
-        $base_url = str_replace($url_path, '', $url);
-        $api_path = $url_path;
-        $api_pathp = explode('/', $api_path);
-        $key = $api_pathp[count($api_pathp) - 1];
-        $api_path = str_replace('/' . $key, '', $api_path);
+        // We need a handle on the input file since we may have to send segments multiple times.
+        $file = fopen($file_path, 'r');
 
-        $bytes_uploaded = 0;
+        $curl_opts = [
+            CURLOPT_POST => true,
+            CURLOPT_CUSTOMREQUEST => 'PATCH',
+            CURLOPT_INFILE => $file,
+            CURLOPT_INFILESIZE => filesize($file_path),
+            CURLOPT_UPLOAD => true,
+            CURLOPT_HTTPHEADER => [
+                'Expect: ',
+                'Content-Type: application/offset+octet-stream',
+                'Tus-Resumable: 1.0.0',
+                'upload-offset: {placeholder}',
+            ]
+        ];
+
+        // Perform the upload by sending as much to the server as possible and ending when we reach the file size on
+        // the server.
         $failures = 0;
-        $chunk_size = $this->getTusUploadChunkSize($default_chunk_size, (int)$file_size);
-
-        $client = new TusClient($base_url);
-        $client->setApiPath($api_path);
-        $client->setKey($key)->file($file_path);
-        $client->setUrl($url);
-        $client->getCache()->set($client->getKey(),[
-            'location' => $url,
-            'expires_at' => Carbon::now()->addSeconds($client->getCache()->getTtl())->format($client->getCache()::RFC_7231),
-        ]);
-
+        $server_at = 0;
         do {
+            // The last HTTP header we set has to be `upload-offset`, since for resumable uploading to work properly,
+            // we'll need to alter the content of the header for each upload segment request.
+            array_pop($curl_opts[CURLOPT_HTTPHEADER]);
+            $curl_opts[CURLOPT_HTTPHEADER][] = 'upload-offset: ' . $server_at;
+
+            fseek($file, $server_at);
+
             try {
-                $bytes_uploaded = $client->upload($chunk_size);
-            } catch (\Exception $e) {
+                $response = $this->_request($url, $curl_opts);
+
+                // Successful upload, so reset the failure counter.
+                $failures = 0;
+
+                if ($response['status'] === 204) {
+                    // If the `upload-offset` returned is equal to the size of the video we want to upload, then we've
+                    // fully uploaded the video. If not, continue uploading.
+                    if ($response['headers']['upload-offset'] === $file_size) {
+                        break;
+                    }
+
+                    $server_at = $response['headers']['upload-offset'];
+                    continue;
+                }
+
+                // If we didn't receive a 204 response from the tus server, then we should verify what's going on before
+                // proceeding to upload more pieces.
+                $verify_response = $this->request($url, [], 'HEAD');
+                if ($verify_response['status'] !== 200) {
+                    $verify_error = !empty($ticket['body']) ? ' [' . $ticket['body'] . ']' : '';
+                    throw new VimeoUploadException('Unable to verify upload' . $verify_error);
+                }
+
+                if ($verify_response['headers']['upload-offset'] === $file_size) {
+                    break;
+                }
+
+                $server_at = $verify_response['headers']['upload-offset'];
+            } catch (VimeoRequestException $exception) {
                 // We likely experienced a timeout, but if we experience three in a row, then we should back off and
                 // fail so as to not overwhelm servers that are, probably, down.
                 if ($failures >= 3) {
-                    throw new VimeoUploadException($e->getMessage());
+                    throw $exception;
                 }
 
                 $failures++;
-                sleep((int)pow(4, $failures)); // sleep 4, 16, 64 seconds (based on failure count)
+                sleep(pow(4, $failures)); // sleep 4, 16, 64 seconds (based on failure count)
+            } catch (VimeoUploadException $exception) {
+                throw $exception;
             }
-        } while ($bytes_uploaded < $file_size);
+        } while ($server_at < $file_size);
 
         return $attempt['body']['uri'];
     }
