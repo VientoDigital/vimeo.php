@@ -615,7 +615,7 @@ class Vimeo
                 if ($response['status'] === 204) {
                     // If the `upload-offset` returned is equal to the size of the video we want to upload, then we've
                     // fully uploaded the video. If not, continue uploading.
-                    if ($response['headers']['upload-offset'] === $file_size) {
+                    if (array_key_exists('upload-offset', $response['headers']) && $response['headers']['upload-offset'] === $file_size) {
                         break;
                     }
 
